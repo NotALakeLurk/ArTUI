@@ -21,7 +21,7 @@ stdscr = None
 scr_maxyx = None # Holds the results of stdscr.getmaxyx()
 pad = None
 pad_maxyx = None # Holds the results of pad.getmaxyx()
-viewport = [0,0, None,None] # A list holding the top left and bottom right corners of the viewed portion of pad
+viewport = [0,0] # A list holding the top left and bottom right corners of the viewed portion of pad
 
 def input_T(T, y, x, n=255):
     """Get input of type T from the user"""
@@ -39,31 +39,23 @@ def input_T(T, y, x, n=255):
 
 
 def init_pad():
-    stdscr.clear()
-    stdscr.addstr(0,0, "Input desired height and width of drawing; your screen is {stdscr.getmaxyx()}")
+    stdscr.addstr(0,0, f"Input desired height and width of drawing; your screen is {stdscr.getmaxyx()}")
     
     stdscr.addstr(1,0, "Height: ")
     stdscr.refresh()
-    height = input_T(int, 1,8)+1 # Add 1 to accomodate border (and future status bars)
+    height = input_T(int, 1,8)+2 # Add 2 to accommodate border (and future status bars)
     stdscr.addstr(2,0, "Width: ")
     stdscr.refresh()
-    width = input_T(int, 2,7)+1 # Same
-
-    global scr_maxyx # Set the viewport size
-    if height < scr_maxyx[0]:
-        viewport[2] = height
-    else: viewport[2] = scr_maxyx
-    if width < scr_maxyx[1]:
-        viewport[3] = width
-    else: viewport[3] = scr_maxyx
+    width = input_T(int, 2,7)+2 # Same
 
     global pad
     pad = curses.newpad(height, width)
     global pad_maxyx # NOTE: This may need to be a list, as it will change with resizing when that's implemented
-    pad_maxyx = (height, width)
+    pad_maxyx = (height-1, width-1)
     pad.border()
     stdscr.clear()
     stdscr.refresh()
+    pad.move(1,1)
     refresh_pad()
 
 def init(initscr):
@@ -74,7 +66,7 @@ def init(initscr):
     global scr_maxyx # Get the screen size to determine the viewport later
     scr_maxyx = tuple(map(lambda n: n-1, stdscr.getmaxyx())) # Subtract 1 from the max y and x because the screen likely doesn't fully show them
 
-    stdscr.addstr(0,0, "Press `q` to exit; h,j,k,l to move")
+    stdscr.addstr(0,0, "Press `q` to exit; h,j,k,l to move; r to resize pad")
     stdscr.getch()
     stdscr.clear()
 
@@ -83,31 +75,56 @@ def init(initscr):
 
 def refresh_pad(y=0, x=0):
     """Refresh pad based on the viewport"""
-    global pad
-    pad.refresh(*viewport[0:2], y,x, *viewport[2:4])
+    pad.refresh(*viewport, y,x, *scr_maxyx)
+    
+def adjust_viewport(pos=None):
+    """Adjust the viewport to include the cursor"""
+    if pos is None: pos = pad.getyx()
+    # Viewport has 2 coordinate pairs that need to stay in sync, so both y or x values must be changed together
+    if pos[1] <= viewport[1]+1: # Viewport[1] is the left side of the viewport
+        viewport[1] -= 1
+    elif pos[0] >= viewport[0]+scr_maxyx[0]: # Viewport[x] + scr_maxyx[x] is the other end of the screen
+        viewport[0] += 1
+    elif pos[0] <= viewport[0]+1: # Viewport[0] is the top
+        viewport[0] -= 1
+    elif pos[1] >= viewport[1]+scr_maxyx[1]: 
+        viewport[1] += 1
+
+def mov_cursor(char):
+    """Move the cursor based on an input character"""
+    # Movement
+    mov_flag = False
+    pos = list(pad.getyx())
+    if char == MOV_LEFT and pos[1] > 0+1: # The border+info occupy the edges of the pad (space accounted for) 
+        pos[1] -= 1
+        mov_flag = True
+    elif char == MOV_DOWN and pos[0] < pad_maxyx[0]-1:
+        pos[0] += 1
+        mov_flag = True
+    elif char == MOV_UP and pos[0] > 0+1:
+        pos[0] -= 1
+        mov_flag = True
+    elif char == MOV_RIGHT and pos[1] < pad_maxyx[1]-1:
+        pos[1] += 1
+        mov_flag = True
+
+    if mov_flag: # Don't do a slow refresh if nothing happened
+        pad.move(*pos) 
+        adjust_viewport(pos)
+        refresh_pad()
 
 def main():
-    
-    
-    # Test the window by waiting for user input and closing
+    pad.addstr(pad_maxyx[0], 0, "Test")
+    pad.move(1,1)
+    refresh_pad()
     while True:
-        pos = pad.getyx()
-        max_pos = pad.getmaxyx()
         char = pad.getch()
-
         # Shortcuts
         if char == ord("q"):
             return
-        # Cursor movement
-        elif char == MOV_LEFT and pos[1] > 0: # Restrict cursor to the screen
-            pad.move(pos[0], pos[1] - 1)
-        elif char == MOV_DOWN and pos[0] < max_pos[0]-1: # max_pos is *just* off the screen @.@
-            pad.move(pos[0] + 1, pos[1])
-        elif char == MOV_UP and pos[0] > 0:
-            pad.move(pos[0] - 1, pos[1])
-        elif char == MOV_RIGHT and pos[1] < max_pos[1]-1:
-            pad.move(pos[0], pos[1] + 1)
-        refresh_pad()
+        elif char == ord("r"):
+            init_pad()
+        else: mov_cursor(char)
 
 # Call the curses wrapper to safely start the TUI; restores terminal state, etc.
 curses.wrapper(init)
