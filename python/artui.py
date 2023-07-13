@@ -12,16 +12,19 @@ import curses
 from curses.textpad import Textbox
 
 # Cursor movement keys consts
-MOV_LEFT = ord("h")
-MOV_DOWN = ord("j")
-MOV_UP = ord("k")
-MOV_RIGHT = ord("l")
+MOV_LEFT = b"KEY_LEFT"
+MOV_DOWN = b"KEY_DOWN"
+MOV_UP = b"KEY_UP"
+MOV_RIGHT = b"KEY_RIGHT"
+
+QUIT = b"^X"
+RESIZE = b"^R"
 
 stdscr = None
 scr_maxyx = None # Holds the results of stdscr.getmaxyx()
 pad = None
 pad_maxyx = None # Holds the results of pad.getmaxyx()
-viewport = [0,0] # A list holding the top left and bottom right corners of the viewed portion of pad
+viewport = [0,0] # A list holding the top left corner of the visible pad area
 
 def input_T(T, y, x, n=255):
     """Get input of type T from the user"""
@@ -34,7 +37,9 @@ def input_T(T, y, x, n=255):
         except ValueError:
             editwin.addstr(0,0, f"Enter a(n) {T}")
             editwin.refresh()
-            editwin.getch()
+            # Using getch allows us to "confirm" that the user knows their mistake,
+            # Ungetch-ing that input allows us to register it in the textbox for user convinience!
+            curses.ungetch(editwin.getch())
             editwin.clear()
 
 
@@ -50,6 +55,7 @@ def init_pad():
 
     global pad
     pad = curses.newpad(height, width)
+    pad.keypad(True)
     global pad_maxyx # NOTE: This may need to be a list, as it will change with resizing when that's implemented
     pad_maxyx = (height-1, width-1)
     pad.border()
@@ -66,7 +72,7 @@ def init(initscr):
     global scr_maxyx # Get the screen size to determine the viewport later
     scr_maxyx = tuple(map(lambda n: n-1, stdscr.getmaxyx())) # Subtract 1 from the max y and x because the screen likely doesn't fully show them
 
-    stdscr.addstr(0,0, "Press `q` to exit; h,j,k,l to move; r to resize pad")
+    stdscr.addstr(0,0, "Press ^X to exit; arrow keys to move; ^R to resize pad")
     stdscr.getch()
     stdscr.clear()
 
@@ -118,11 +124,11 @@ def main():
     pad.move(1,1)
     refresh_pad()
     while True:
-        char = pad.getch()
+        char = curses.keyname(pad.getch())
         # Shortcuts
-        if char == ord("q"):
+        if char == QUIT:
             return
-        elif char == ord("r"):
+        elif char == RESIZE: 
             init_pad()
         else: mov_cursor(char)
 
