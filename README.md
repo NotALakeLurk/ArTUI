@@ -5,11 +5,12 @@ It uses the [Curses](https://docs.python.org/3/library/curses.html) Python libra
 ## Controls (very likely to change)
 - h,j,k,l for movement
 - q to quit
+- r to resize pad
 
 ## Features
 - v1
 	- [ ] Character-only text-based visual art
-	- [ ] Resizeable pad
+	- [x] Resizeable pad
 	- [ ] Color
  
 - v2
