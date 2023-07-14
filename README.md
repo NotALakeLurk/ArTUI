@@ -19,7 +19,7 @@ It uses the [Curses](https://docs.python.org/3/library/curses.html) Python libra
 	- [x] Character-only text-based visual art (haven't tested outside of ASCII yet, submit an issue or something if it's that important to you)
 	- [x] Resizeable pad (doesn't currently keep existing art)
 	- [ ] Color
- - [ ] Information bar(s)
+ 	- [ ] Information bar(s)
  
 - v2
 	- [ ] Tools
