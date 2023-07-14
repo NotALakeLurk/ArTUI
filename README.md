@@ -29,9 +29,9 @@ It uses the [Curses](https://docs.python.org/3/library/curses.html) Python libra
 		- [ ] Exporter
 
 ## Versions
-	### v0.1 (Versioning start)
-		#### Added
-		- ^X to quit
-		- Arrow key movement
-		- Character-based art functionality
-		- Reset and custom size pad
+### v0.1 (Versioning start)
+#### Added
+- ^X to quit
+- Arrow key movement
+- Character-based art functionality
+- Reset and custom size pad
