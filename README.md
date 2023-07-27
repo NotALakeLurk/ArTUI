@@ -11,16 +11,14 @@ It uses the [Curses](https://docs.python.org/3/library/curses.html) Python libra
 - ^R to resize pad (Replaces old pad)
 
 ## Features
-- v1
-	- [x] Character-only text-based visual art (ASCII only currently)
-	- [x] Resizeable pad 
-	- [ ] Color
- 	- [ ] Information bar(s)
- 
-- v2
-	- [ ] Tools
-		- [ ] Fill
-		- [ ] Brush size
- 	- [ ] Art Vandelay
-		- [ ] Importer
-		- [ ] Exporter
+
+- [x] Character-only text-based visual art (ASCII only currently)
+- [x] Resizeable pad 
+- [ ] Color
+ - [ ] Information bar(s)
+- [ ] Tools
+	- [ ] Fill
+	- [ ] Brush size
+ - [ ] Art Vandelay
+	- [ ] Importer
+	- [ ] Exporter
