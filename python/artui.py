@@ -1,3 +1,7 @@
+# Copywright (c) 2023 John D. Reed / NotALakeLurk
+# Subject to the MIT License as part of the ArTUI project
+# https://opensource.org/license/mit/ https://github.com/NotALakeLurk/ArTUI 
+
 """
 |	ArTUI: A TUI drawing program
 |
@@ -8,8 +12,6 @@
 |
 |	Notes: Originally intended for learning use only!
 """
-
-# Work on getting rid of global names and instead passing and returning arguments; should be more pythonic ?-?
 
 import curses
 from curses.textpad import Textbox
@@ -128,11 +130,11 @@ def adjust_viewport(stdscr, pad, viewport, pos=None):
     if pos is None: pos = pad.getyx()
     scr_maxyx = getmaxyx(stdscr)
     # Viewport has 2 coordinate pairs that need to stay in sync, so both y or x values must be changed together
-    if pos[1] <= viewport[1]+1: # Viewport[1] is the left side of the viewport
+    if pos[1] <= viewport[1]: # Viewport[1] is the left side of the viewport
         viewport[1] -= 1
     elif pos[0] >= viewport[0]+scr_maxyx[0]: # Viewport[x] + scr_maxyx[x] is the other end of the screen
         viewport[0] += 1
-    elif pos[0] <= viewport[0]+1: # Viewport[0] is the top
+    elif pos[0] <= viewport[0]: # Viewport[0] is the top
         viewport[0] -= 1
     elif pos[1] >= viewport[1]+scr_maxyx[1]: 
         viewport[1] += 1
@@ -143,7 +145,7 @@ def mov_cursor(stdscr, pad, viewport, char):
     mov_flag = False
     pos = list(pad.getyx())
     pad_maxyx = getmaxyx(pad)
-    if char == MOV_LEFT and pos[1] > 0: # The border+info occupy the edges of the pad (space accounted for) 
+    if char == MOV_LEFT and pos[1] > 0:
         pos[1] -= 1
         mov_flag = True
     elif char == MOV_DOWN and pos[0] < pad_maxyx[0]:
