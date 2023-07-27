@@ -110,6 +110,7 @@ def resize_pad(stdscr, pad, viewport):
         if pad_maxyx[i] < (viewport[i]+scr_maxyx[i]):
             viewport[i] -= viewport[i]+scr_maxyx[i] - pad_maxyx[i]
 
+    stdscr.refresh() # Refresh the stdscr to get rid of any art left out of bounds from shrinking
     refresh_pad(stdscr, pad, viewport)
 
 # }}}
