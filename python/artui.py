@@ -22,12 +22,20 @@ MOV_DOWN = b"KEY_DOWN"
 MOV_UP = b"KEY_UP"
 MOV_RIGHT = b"KEY_RIGHT"
 
-QUIT = b"^X"
 RESIZE = b"^R"
 
-stdscr = None
-viewport = [0,0] # A list holding the top left corner of the visible pad area
-painting = False
+CONTROL_DICT = {
+    # NOTE: s=stdscr, p=pad, v=viewport
+    # NOTE: I should change mov_cursor to make this better 
+    MOV_LEFT: lambda s,p,v: mov_cursor(s,p,v, MOV_LEFT),
+    MOV_DOWN: lambda s,p,v: mov_cursor(s,p,v, MOV_DOWN),
+    MOV_UP: lambda s,p,v: mov_cursor(s,p,v, MOV_UP),
+    MOV_RIGHT: lambda s,p,v: mov_cursor(s,p,v, MOV_RIGHT),
+
+    RESIZE: lambda s,p,v: resize_pad(s,p,v)
+}
+
+QUIT = b"^X"
 
 # UTILS {{{
 def input_T(T, y, x, n=255):
@@ -164,13 +172,6 @@ def mov_cursor(stdscr, pad, viewport, char):
         adjust_viewport(stdscr, pad, viewport, pos)
         refresh_pad(stdscr, pad, viewport)
 
-def handle_control_char(stdscr, pad, viewport, char):
-    """Perform the correct actions for program control characters"""
-    # NOTE: It may eventually be better to have a list of all control characters to check if a string is actually a control character
-    if char == RESIZE: 
-        resize_pad(stdscr, pad, viewport)
-    else: mov_cursor(stdscr, pad, viewport, char)
-
 def handle_normal_char(stdscr, pad, viewport, char):
     # TODO: Convert this function to call a tool's function instead of this
     pos = pad.getyx()
@@ -182,8 +183,10 @@ def main(stdscr, pad, viewport):
     while True:
         char = curses.keyname(pad.getch()) # This essentially does pad.getkey(), except better
         if char == QUIT: return
-        elif len(char) > 1: # Special characters like ^R or KEY_LEFT have bytestrings of 2 or longer
-            handle_control_char(stdscr, pad, viewport, char)
+        # Using CONTROL_DICT.get(char, lambda s,p,v: handle_normal_char(s,p,v,char)(stdscr,pad,viewport)
+        # Might be better than the following
+        elif char in CONTROL_DICT:
+            CONTROL_DICT[char](stdscr, pad, viewport) # Call a control function if it exists
         else: handle_normal_char(stdscr, pad, viewport, char)
 
 
