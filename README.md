@@ -11,7 +11,8 @@ It uses the [Curses](https://docs.python.org/3/library/curses.html) Python libra
 ## Controls (very likely to change)
 - Arrow keys for movement
 - ^X to quit
-- ^R to resize pad (Replaces old pad)
+- ^R to resize pad (Doesn't clear border)
+- ^H to toggle cursor visibility (Useful for screenshots as ArTUI doesn't yet have saving)
 
 ## Features
 
