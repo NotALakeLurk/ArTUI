@@ -6,8 +6,7 @@ It uses the [Curses](https://docs.python.org/3/library/curses.html) Python libra
 - Crashes when writing to a pad with zero height (Out of bounds addch())
 - Crashes when writing to the bottom right corner of a pad (addch() pushes the cursor to the right,
     in the case that there is no space, the cursor is wrapped to the next line.
-    at the bottom-right corner, this results in an out-of-bounds cursor.)
-- Crashes when enter is pressed
+    at the bottom-right corner, this results in an out-of-bounds cursor.
 
 ## Controls (very likely to change)
 - Arrow keys for movement
