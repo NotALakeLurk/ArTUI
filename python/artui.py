@@ -23,6 +23,9 @@ MOV_UP = b"KEY_UP"
 MOV_RIGHT = b"KEY_RIGHT"
 
 RESIZE = b"^R"
+HIDE_CURSOR = b"^H"
+
+current_cursor_visibility = 2
 
 CONTROL_DICT = {
     # NOTE: s=stdscr, p=pad, v=viewport
@@ -32,7 +35,8 @@ CONTROL_DICT = {
     MOV_UP: lambda s,p,v: mov_cursor(s,p,v, MOV_UP),
     MOV_RIGHT: lambda s,p,v: mov_cursor(s,p,v, MOV_RIGHT),
 
-    RESIZE: lambda s,p,v: resize_pad(s,p,v)
+    RESIZE: lambda s,p,v: resize_pad(s,p,v),
+    HIDE_CURSOR: lambda s,p,v: switch_cursor_visibility()
 }
 
 QUIT = b"^X"
@@ -69,7 +73,7 @@ def query_pad_size(stdscr):
     scroll_needed = getmaxyx(stdscr)[0] < 3
     viewline = 0 # The uppermost visible line's pad location
 
-    querypad.addstr(0,0, f"Input desired height and width of drawing; your screen is {getmaxyx(stdscr)}")
+    querypad.addstr(0,0, f"Input desired height and width of drawing; your screen is {getmaxyx(stdscr)}; squares are roughly 4x9")
     viewline += int(scroll_needed) # Add the neccesary scroll to the viewline
     
     querypad.addstr(1,0, "Height: ")
@@ -85,7 +89,7 @@ def query_pad_size(stdscr):
     querypad.clear()
     refresh_pad(stdscr, querypad, (0,0))
 
-    return (height, width)
+    return (height+2, width+2) # Add 2 to the height and width to account for the borders
 
 def init_pad(stdscr):
     height, width = query_pad_size(stdscr)
@@ -94,6 +98,10 @@ def init_pad(stdscr):
     pad.keypad(True)
 
     viewport = [0,0]
+
+    pad.border()
+
+    pad.move(1,1) # Move the cursor to be off the border
 
     refresh_pad(stdscr, pad, viewport)
 
@@ -110,6 +118,7 @@ def resize_pad(stdscr, pad, viewport):
 
     # Move the viewport if it ends up outside the pad bounds
     pad_maxyx = pad.getmaxyx()
+
     scr_maxyx = getmaxyx(stdscr)
     for i in range(0,1):
         # NOTE: ArTUI seems like a great place to play with some branchless programming
@@ -117,12 +126,40 @@ def resize_pad(stdscr, pad, viewport):
         # Move it by the difference of the corresponding pad and view edges to bring it back
         if pad_maxyx[i] < (viewport[i]+scr_maxyx[i]):
             viewport[i] -= viewport[i]+scr_maxyx[i] - pad_maxyx[i]
+            refresh_flag = True
+
+    pos = list(pad.getyx())
+
+    # Make sure that the cursor is within the viewport
+    for i in range(0,1):
+        if viewport[i]+scr_maxyx[i]-1 < pos[i]:
+            pos[i] -= pos[i] - (viewport[i]+scr_maxyx[i]-1)
+        elif viewport[i]+1 > pos[i]:
+            pos[i] += (viewport[i]+1) - pos[i]
+
+    # Do almost the same thing to ensure that the cursor is within bounds
+    for i in range(0,1):
+        # pad_maxyx - 1 because of the border
+        if pad_maxyx[i]-1 < pos[i]:
+            pos[i] -= pos[i] - (pad_maxyx[i]-1)
+
+    pad.move(*pos)
 
     stdscr.refresh() # Refresh the stdscr to get rid of any art left out of bounds from shrinking
+    pad.border() # Redraw the border
     refresh_pad(stdscr, pad, viewport)
 
 # }}}
-    
+
+def switch_cursor_visibility():
+    global current_cursor_visibility # Very sad global
+    if current_cursor_visibility == 2:
+        curses.curs_set(0)
+        current_cursor_visibility = 0
+    else:
+        curses.curs_set(2)
+        current_cursor_visibility = 2
+
 def init(stdscr):
     stdscr.clear()
 
@@ -135,7 +172,6 @@ def init(stdscr):
 
 def adjust_viewport(stdscr, pad, viewport, pos=None):
     """Adjust the viewport to include the cursor"""
-    # TODO: Rework this function to actually work for most cases
     if pos is None: pos = pad.getyx()
     scr_maxyx = getmaxyx(stdscr)
     # Viewport has 2 coordinate pairs that need to stay in sync, so both y or x values must be changed together
@@ -154,16 +190,16 @@ def mov_cursor(stdscr, pad, viewport, char):
     mov_flag = False
     pos = list(pad.getyx())
     pad_maxyx = getmaxyx(pad)
-    if char == MOV_LEFT and pos[1] > 0:
+    if char == MOV_LEFT and pos[1] > 1:
         pos[1] -= 1
         mov_flag = True
-    elif char == MOV_DOWN and pos[0] < pad_maxyx[0]:
+    elif char == MOV_DOWN and pos[0] < pad_maxyx[0] -1:
         pos[0] += 1
         mov_flag = True
-    elif char == MOV_UP and pos[0] > 0:
+    elif char == MOV_UP and pos[0] > 1:
         pos[0] -= 1
         mov_flag = True
-    elif char == MOV_RIGHT and pos[1] < pad_maxyx[1]:
+    elif char == MOV_RIGHT and pos[1] < pad_maxyx[1] -1:
         pos[1] += 1
         mov_flag = True
 
@@ -187,7 +223,7 @@ def main(stdscr, pad, viewport):
         # Might be better than the following
         elif char in CONTROL_DICT:
             CONTROL_DICT[char](stdscr, pad, viewport) # Call a control function if it exists
-        else: handle_normal_char(stdscr, pad, viewport, char)
+        elif len(char) == 1: handle_normal_char(stdscr, pad, viewport, char)
 
 
 # Call the curses wrapper to safely start the TUI; restores terminal state, etc.
